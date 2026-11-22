@@ -1,0 +1,4 @@
+evidence/inputs/*.xyz -text -diff -merge
+data/*.sdf -text -diff -merge
+evidence/inputs/*.jsonl -text -diff -merge
+*.csv text eol=lf

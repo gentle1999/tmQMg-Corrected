@@ -1,0 +1,8 @@
+id,cohort,wbo_sha256,wbo_bytes_match,max_abs_wbo_delta,energy_delta_Eh,gap_delta_eV
+ABEVAG,control,6d62a4103360569a5627657a4e74a2ad7ed7b486bb295c5a304e7751aaa4ea4f,True,0.0,0.0,0.0
+CUDBOU,additional_control,6c2ea5628c14721b55aa4da3da13215f3a5c880c735c54616318decfadfc225d,True,0.0,0.0,0.0
+DEFWIY,additional_control,072aadb672671e59bb395c72e85d581a41c7087ce4e2a701d5462adb49e3dcfc,True,0.0,0.0,0.0
+ERULUB,main,1ebf46e798f05de52000873c427ae9470c4000cc7c0650e83f640ba5defd957c,True,0.0,0.0,0.0
+JEGLOA,main,f2bb4579404a76942bb2ca837ad6fccb9578c2bf89069851d77490e030bb7912,True,0.0,0.0,0.0
+RAWVAN,main,c6f435bede408943a0f7db3ab8e1663c110e83eef802fe3b1f67a761a8bd8a77,True,0.0,0.0,0.0
+SAZFEF,additional_control,3185cf3661cdb439b93cdf163a9db4606d51cebf7fbb53e9e4b280decab7e91e,True,0.0,0.0,0.0

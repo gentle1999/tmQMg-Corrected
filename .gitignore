@@ -1,0 +1,8 @@
+__pycache__/
+*.pyc
+.venv/
+.ruff_cache/
+.mypy_cache/
+/dist/tmqmg-corrected.tar.gz
+/dist/tmqmg-corrected-gxtb-logs-*/
+/dist/tmqmg-corrected-20??-??-??/

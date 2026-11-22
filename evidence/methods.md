@@ -1,0 +1,26 @@
+# Sources and annotation methods
+
+## Input data
+
+The 2023 tmQMg paper describes 60,799 complexes. This release uses the expanded collection of 74,547 IDs at Git revision `e1dc9887b8f20a217a1db6ca972d726bcbaab45b`. The properties table supplies `id`, `charge` and the `smiles` used for comparison. XYZ supplies elements, atom order and coordinates in ångströms. tmQMg used a closed-shell singlet for its quantum calculations. We record multiplicity 1 for all 74,547 inputs. Experimental spin assignments, where available, are recorded separately. The comparison concerns the chemical bond labels in the properties table. tmQMg also distributes natural quantum graphs describing quantum-chemical interactions. The manifest pins both input files by SHA-256. [Original paper](https://doi.org/10.1039/D2DD00129B) · [Properties table](https://github.com/uiocompcat/tmQMg/blob/e1dc9887b8f20a217a1db6ca972d726bcbaab45b/data/tmQMg_properties_and_targets.csv) · [XYZ archive](https://github.com/uiocompcat/tmQMg/blob/e1dc9887b8f20a217a1db6ca972d726bcbaab45b/data/tmQMg_xyz.zip) · [Manifest](../manifest.json)
+
+The GitHub revision includes the upstream MIT license. The November 2025 NIRD deposit for the baseline, u-NatQ and d-NatQ graph archives specifies CC BY 4.0. The corrected Lewis annotations carry their own attribution notice. [License and attribution](../sources/DATA-LICENSE.md) · [NIRD archive](https://doi.org/10.11582/2025.5if4m3y3) · [Version-specific license metadata](https://data.archive.sigma2.no/dataset/4f94f626-b18c-458c-946f-d7052bb05982/download/dataset_metadata_10.11582_2025.5if4m3y3.json)
+
+## Reference graph selection
+
+1. **Establish the input.** Join XYZ and the properties-table charge by CSD ID and apply the input multiplicity. Preserve every input atom. Check the heavy-atom skeleton, net charge, hydrogen count and identifiable hydrogen sites against the same-ID metal-containing component where available. Record incomplete coordinates, uncertain electronic states and multicentre boron structures in the exclusion index. [Exclusion evidence](data.md#excluded-inputs)
+2. **Identify what the source establishes.** Prefer a primary report for the same species or an original same-ID CSD connection table. Distinguish revised CSD connectivity, graphs derived from crystal coordinates, mapped tmQM sites and ligand assignments from manual review. Record whether the source supports composition, local geometry, a particular ligand or the complete graph. [CSD transcription](https://github.com/jensengroup/xyz2mol_tm/blob/db2734b084045ef895528c7a3d5040d38da23983/SMILES_csvs/csd_smiles.csv) · [tmQM](https://github.com/uiocompcat/tmQM/tree/ece824419c9006fe66436daf233822b75533b82f/tmQM)
+3. **Check individual bonds.** For a converged g-xTB run at the input geometry, charge and UHF setting, compare the length and Wiberg bond order (WBO) of each nonmetal covalent bond with empirical controls. Screen nonbonded nonmetal pairs for additional contacts. Record missing values, sparse controls and outliers separately. Choosing an integer bond order also requires ligand chemistry, charge balance and structural evidence. [g-xTB v2.0.0](https://github.com/grimme-lab/g-xtb/releases/tag/v2.0.0) · [Bond evidence fields and thresholds](data.md#bond-evidence)
+4. **Select one graph.** Keep established integer bond orders. In aromatic systems, conserve each atom's allowed number of double bonds and use WBOs and bond lengths with sufficient controls to select a Kekulé assignment. Keep the initial feasible assignment on a tie or in the absence of suitable controls. Record formal charges, radicals, coordination and the scope of alternative spin or oxidation-state interpretations. The per-ID rationale records the evidence used for the released form. The equivalence comparison evaluates the upstream label against that selected graph.
+
+| Tier | Graphs | Basis for the complete graph |
+| --- | ---: | --- |
+| 1 | 11,114 | The recorded graph source is the original same-ID CSD connection table for 11,059 graphs and a primary report for 55. |
+| 2 | 37,718 | Documented source evidence, original geometry and g-xTB calculations support the assignment. |
+| 3 | 23,393 | One conditional Lewis representation is supplied. Independent evidence for the complete graph is limited. Some graphs come from a reconstruction method evaluated on the dataset. |
+
+## Using the release as a benchmark
+
+Supply a predictor with XYZ, charge and multiplicity. Score the 72,225 entries with `benchmark=true`. Keep reference SDF, provenance and calculation summaries apart from the prediction inputs. Scores can be stratified by evidence tier.
+
+MolGR 0.1.10 compares the upstream SMILES with the archived native reference using `ignore_metal_coordination_bonds=true`, `use_chirality=false`, `max_resonance=100000` and a 60-second time limit per ID. The comparison accepts verifiable ligand resonance equivalents and checks formal electronic assignments at metals. Use the `recomputed` column for the release statistics. Relative to the historical `published` column, 168 verdicts changed from equivalent to inconclusive and three changed from inconclusive to equivalent. Each row gives the reason for the new verdict. [Scoring instructions](data.md#graph-equivalence) · [MolGR](https://github.com/gentle1999/MolGR)

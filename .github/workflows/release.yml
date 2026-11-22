@@ -1,0 +1,101 @@
+name: Publish dataset release
+
+on:
+  push:
+    tags: ['v[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]']
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Existing dataset tag (vYYYY-MM-DD)
+        required: true
+        type: string
+
+permissions:
+  contents: write
+
+concurrency:
+  group: dataset-release-${{ inputs.tag || github.ref_name }}
+  cancel-in-progress: false
+
+jobs:
+  release:
+    if: github.event_name != 'push' || !github.event.deleted
+    runs-on: ubuntu-24.04
+    defaults:
+      run:
+        shell: bash
+    env:
+      TAG: ${{ inputs.tag || github.ref_name }}
+      GH_REPO: ${{ github.repository }}
+    steps:
+      - name: Check tag format
+        run: '[[ "$TAG" =~ ^v[0-9]{4}-[0-9]{2}-[0-9]{2}$ ]]'
+
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          ref: refs/tags/${{ inputs.tag || github.ref_name }}
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Match the tag to the release manifest
+        run: |
+          version=$(jq -er '.version' manifest.json)
+          [[ "$TAG" == "v$version" ]]
+          [[ "$(git rev-parse HEAD)" == "$(git rev-parse "refs/tags/$TAG^{commit}")" ]]
+          if [[ "$GITHUB_EVENT_NAME" == push ]]; then
+            [[ "$(git rev-parse HEAD)" == "$(git rev-parse "$GITHUB_SHA^{commit}")" ]]
+          fi
+          echo "LOG_STEM=tmqmg-corrected-gxtb-logs-$version" >> "$GITHUB_ENV"
+          echo "BUNDLE=dist/tmqmg-corrected-$version" >> "$GITHUB_ENV"
+
+      - name: Prepare the release draft
+        id: draft
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if ! state=$(gh release view "$TAG" --json isDraft --jq '.isDraft'); then
+            gh release create "$TAG" --verify-tag --draft --title "tmQMg-Corrected ${TAG#v}" \
+              --notes "Dataset, reproduction files and original g-xTB logs for $TAG. Verify the downloaded assets with SHA256SUMS."
+            state=true
+          fi
+          if [[ "$state" == false ]]; then
+            echo "Release $TAG is already published." >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+          assets=$(gh release view "$TAG" --json assets --jq '.assets[].name')
+          for name in "$LOG_STEM.zip" "$LOG_STEM-index.csv"; do
+            if ! grep -Fxq "$name" <<< "$assets"; then
+              echo "Upload $LOG_STEM.zip and $LOG_STEM-index.csv to the $TAG draft, then run this workflow for $TAG." | tee -a "$GITHUB_STEP_SUMMARY"
+              [[ "$GITHUB_EVENT_NAME" == push ]] && exit 0
+              exit 1
+            fi
+          done
+          echo "ready=true" >> "$GITHUB_OUTPUT"
+
+      - name: Verify inputs and build the tagged bundle
+        if: steps.draft.outputs.ready == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release download "$TAG" --dir "dist/$LOG_STEM" \
+            --pattern "$LOG_STEM.zip" --pattern "$LOG_STEM-index.csv"
+          python3 scripts/validate.py
+          python3 scripts/package.py --bundle
+          (cd "$BUNDLE" && sha256sum --check SHA256SUMS)
+
+      - name: Upload, verify and publish
+        if: steps.draft.outputs.ready == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          cd "$BUNDLE"
+          release=$(gh release view "$TAG" --json databaseId,isDraft)
+          jq -e '.isDraft' <<< "$release" > /dev/null
+          gh release upload "$TAG" --clobber README.md SHA256SUMS *-sdf.tar.gz *-snapshot.tar.gz
+          id=$(jq -er '.databaseId' <<< "$release")
+          gh api --paginate "repos/$GH_REPO/releases/$id/assets" \
+            --jq '.[] | [(.digest | ltrimstr("sha256:")), .name] | join("  ")' \
+            | LC_ALL=C sort > "$RUNNER_TEMP/remote-assets"
+          sha256sum -- * | LC_ALL=C sort > "$RUNNER_TEMP/local-assets"
+          diff -u "$RUNNER_TEMP/local-assets" "$RUNNER_TEMP/remote-assets"
+          gh release edit "$TAG" --draft=false
