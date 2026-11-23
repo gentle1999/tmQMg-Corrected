@@ -198,7 +198,7 @@ def main():
     parser.add_argument("--output-dir", type=Path, default=ROOT / "dist")
     args = parser.parse_args()
     manifest = json.loads((ROOT / "manifest.json").read_bytes())
-    version = manifest["version"]
+    version = manifest.get("gxtb_log_version", manifest["version"])
     stem = f"tmqmg-corrected-gxtb-logs-{version}"
     args.output_dir.mkdir(parents=True, exist_ok=True)
     target = args.output_dir / stem

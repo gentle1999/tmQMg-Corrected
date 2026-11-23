@@ -23,6 +23,7 @@ from exclusions import (
     formula,
     index_entry,
     load_bridge_audit,
+    spin_reassessment,
 )
 
 
@@ -304,6 +305,12 @@ def check_exclusion(row, atoms, part, index, bridges):
             f"{case}: boron evidence inconsistent with coordinates",
         )
     elif row["exclusion"] == "Questionable electronic state":
+        if "spin_reassessment" in row["exclusion_evidence"]:
+            require(
+                assessment == spin_reassessment(row, counts),
+                f"{case}: alternative spin assessment differs from its evidence",
+            )
+            return
         require(
             assessment["input_multiplicity"] == row["multiplicity"]
             and assessment["reported_state"]
@@ -337,7 +344,8 @@ class ControlFit:
         symbols = [line.split()[0].decode() for line in atoms]
         pairs = {tuple(sorted((i, j))): v for i, j, v in run["wbo_pairs"]}
         lengths, wbos, bonds = set(), set(), []
-        for i, j, pair, _, control, *_ in row["wbo_analysis"]["bonds"]:
+        audit = row.get("wbo_analysis") or row["previous_graph_review"]["wbo_analysis"]
+        for i, j, pair, _, control, *_ in audit["bonds"]:
             key = f"{pair}/{control}"
             value = pairs.pop((i, j), None)
             if holdout:

@@ -193,6 +193,63 @@ def bridge_assessment(r):
     }
 
 
+def spin_reassessment(row, counts):
+    """Summarize the alternative state and its evidence for a withdrawn graph."""
+    review = row["exclusion_evidence"]["spin_reassessment"]
+    kind = review["evidence_type"]
+    candidate = review["candidate_state"]
+    refs = []
+    if kind == "published calculation":
+        records = row["spin_evidence"]["published_spin_records_json"]
+        multiplicity = int(row["spin_evidence"]["computed_multiplicity"])
+        if not records or candidate != {3: "Triplet", 5: "Quintet"}[multiplicity]:
+            raise ValueError(f"{row['id']}: inconsistent candidate spin")
+        for match in records:
+            entry = match["record"]
+            if (
+                entry["refcode"] != row["id"]
+                or int(entry["total_charge"]) != row["charge"]
+                or int(entry["spin_multiplicity"]) != multiplicity
+                or match["input_xyz_sha256"] != row["xyz_sha256"]
+                or not match["all_nearest_H_sites_match"]
+            ):
+                raise ValueError(f"{row['id']}: mismatched published spin record")
+            refs.append("https://doi.org/" + match["data_doi"])
+        datasets = ", ".join(match["source"] for match in records)
+        basis = (
+            f"The published multiplicity is {multiplicity} in {datasets} for the same CSD ID, "
+            "charge and hydrogen sites at the source geometry."
+        )
+        for match in records:
+            if "splitting" in match["record"]:
+                basis += (
+                    " The published vertical spin splitting is "
+                    f"{match['record']['splitting']} kcal/mol."
+                )
+        if not any("splitting" in match["record"] for match in records):
+            basis += " The supplementary record gives the multiplicity alone."
+        if "measurement" in review:
+            basis += " " + review["measurement"]
+            refs.append(review["measurement_source"])
+        reason = f"{candidate} reported for a singlet input"
+    else:
+        reason = "Alternative spin state remains unresolved"
+        basis = review["basis"]
+        if kind == "fixed-geometry calculation":
+            fixed = row["case_evidence"]["fixed_xyz_review"][0]
+            basis += " " + fixed["electronic_state_evidence"]
+        refs = review["sources"]
+    return {
+        "reason": reason,
+        "basis": f"Input multiplicity {row['multiplicity']}. {candidate}. {basis}",
+        "input_formula": formula(counts),
+        "sources": list(dict.fromkeys(refs)),
+        "input_multiplicity": row["multiplicity"],
+        "candidate_state": candidate,
+        "evidence_type": kind,
+    }
+
+
 def assess(row, atoms, csd, bridges):
     case = row["id"]
     counts = Counter(a[0] for a in atoms)
@@ -234,6 +291,8 @@ def assess(row, atoms, csd, bridges):
             "missing_H": delta,
         }
     elif row["exclusion"] == "Questionable electronic state":
+        if "spin_reassessment" in raw:
+            return spin_reassessment(row, counts)
         reason = "Input singlet conflicts with the published spin assignment"
         state = raw.get("literature_multiplicity", raw.get("correct_multiplicity"))
         spin_basis = raw.get("multiplicity_basis") or raw.get("basis")

@@ -45,7 +45,9 @@ jobs:
           if [[ "$GITHUB_EVENT_NAME" == push ]]; then
             [[ "$(git rev-parse HEAD)" == "$(git rev-parse "$GITHUB_SHA^{commit}")" ]]
           fi
-          echo "LOG_STEM=tmqmg-corrected-gxtb-logs-$version" >> "$GITHUB_ENV"
+          log_version=$(jq -er '.gxtb_log_version // .version' manifest.json)
+          echo "LOG_TAG=v$log_version" >> "$GITHUB_ENV"
+          echo "LOG_STEM=tmqmg-corrected-gxtb-logs-$log_version" >> "$GITHUB_ENV"
           echo "BUNDLE=dist/tmqmg-corrected-$version" >> "$GITHUB_ENV"
 
       - name: Prepare the release draft
@@ -60,6 +62,10 @@ jobs:
           fi
           if [[ "$state" == false ]]; then
             echo "Release $TAG is already published." >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+          if [[ "$LOG_TAG" != "$TAG" ]]; then
+            echo "ready=true" >> "$GITHUB_OUTPUT"
             exit 0
           fi
           assets=$(gh release view "$TAG" --json assets --jq '.assets[].name')
@@ -77,7 +83,7 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          gh release download "$TAG" --dir "dist/$LOG_STEM" \
+          gh release download "$LOG_TAG" --dir "dist/$LOG_STEM" \
             --pattern "$LOG_STEM.zip" --pattern "$LOG_STEM-index.csv"
           python3 scripts/validate.py
           python3 scripts/package.py --bundle
@@ -92,6 +98,9 @@ jobs:
           release=$(gh release view "$TAG" --json databaseId,isDraft)
           jq -e '.isDraft' <<< "$release" > /dev/null
           gh release upload "$TAG" --clobber README.md SHA256SUMS *-sdf.tar.gz *-snapshot.tar.gz
+          if [[ "$LOG_TAG" != "$TAG" ]]; then
+            gh release upload "$TAG" --clobber "$LOG_STEM.zip" "$LOG_STEM-index.csv"
+          fi
           id=$(jq -er '.databaseId' <<< "$release")
           gh api --paginate "repos/$GH_REPO/releases/$id/assets" \
             --jq '.[] | [(.digest | ltrimstr("sha256:")), .name] | join("  ")' \

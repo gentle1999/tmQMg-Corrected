@@ -77,7 +77,8 @@ def build_bundle(manifest, sdf):
         [*git, "rev-parse", f"refs/tags/{tag}^{{commit}}"], text=True
     ).strip()
     subprocess.run([*git, "diff", "--quiet", commit, "--"], check=True)
-    log_dir = sdf.parent / f"tmqmg-corrected-gxtb-logs-{version}"
+    log_version = manifest.get("gxtb_log_version", version)
+    log_dir = sdf.parent / f"tmqmg-corrected-gxtb-logs-{log_version}"
     target = sdf.parent / stem
     with TemporaryDirectory(dir=sdf.parent) as tmp:
         bundle = Path(tmp) / stem

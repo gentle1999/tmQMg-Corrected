@@ -15,12 +15,22 @@ The GitHub revision includes the upstream MIT license. The November 2025 NIRD de
 
 | Tier | Graphs | Basis for the complete graph |
 | --- | ---: | --- |
-| 1 | 11,114 | The recorded graph source is the original same-ID CSD connection table for 11,059 graphs and a primary report for 55. |
+| 1 | 11,044 | The recorded graph source is the original same-ID CSD connection table for 10,989 graphs and a primary report for 55. |
 | 2 | 37,718 | Documented source evidence, original geometry and g-xTB calculations support the assignment. |
-| 3 | 23,393 | One conditional Lewis representation is supplied. Independent evidence for the complete graph is limited. Some graphs come from a reconstruction method evaluated on the dataset. |
+| 3 | 23,278 | One conditional Lewis representation is supplied. Independent evidence for the complete graph is limited. Some graphs come from a reconstruction method evaluated on the dataset. |
+
+### Paired radicals in neutral bis(dithiolene) complexes
+
+For 31 Ni, one Pd and one Pt complex, the reference uses a divalent metal and two dithiolene radical monoanions. In the primary study of DATTUR, the distances along the S–C–C–S chelates support this ligand oxidation state. The authors describe pairing of the two ligand spins in the neutral nickel complex. The crystal survey identified ECEKAA and SICWOR by refcode. For the other 28 nickel entries, the original annotation extended the DATTUR model by analogy. For SONPUI (Pd, compound 10) and SOPMOB (Pt, compound 5), the original refcode survey is supplemented by a primary study that assigns radical monoanions to those specific ligands from their crystal bond lengths. [DATTUR](https://doi.org/10.1107/S2414314622001481) · [Crystal survey](https://doi.org/10.1107/S205698902300097X) · [Pd and Pt structures](https://doi.org/10.1021/ic501273b)
+
+The annotation places the radical on the lower-indexed of the two donor sulfur atoms in each ligand to encode one localized Lewis form. All 33 native graphs record antiferromagnetic coupling under this model. The follow-up table gives the basis for using the model for each ID, the corresponding input bond lengths and the available evidence for the molecular ground spin. [Per-ID evidence](data.md#spin-evidence-for-graphs-with-two-radical-sites)
+
+### Electronic-state exclusions
+
+Withhold a scoring graph when the spin review documents an alternative to the input singlet within the 185-case reassessment. A same-ID published computational assignment, a triplet calculation on the input geometry, and a possible spin inferred from coordination chemistry carry different evidential weight. The index identifies the applicable evidence for each case. A positive triplet-minus-restricted-singlet energy is recorded with its sign. These two-state comparisons leave other spin couplings open. The archived g-xTB runs used UHF = 0 and supply bond evidence only for that setting. [Spin exclusion evidence](data.md#alternative-spin-states)
 
 ## Using the release as a benchmark
 
-Supply a predictor with XYZ, charge and multiplicity. Score the 72,225 entries with `benchmark=true`. Keep reference SDF, provenance and calculation summaries apart from the prediction inputs. Scores can be stratified by evidence tier.
+Supply a predictor with XYZ, charge and multiplicity. Score the 72,040 entries with `benchmark=true`. Keep reference SDF, provenance and calculation summaries apart from the prediction inputs. Scores can be stratified by evidence tier.
 
 MolGR 0.1.10 compares the upstream SMILES with the archived native reference using `ignore_metal_coordination_bonds=true`, `use_chirality=false`, `max_resonance=100000` and a 60-second time limit per ID. The comparison accepts verifiable ligand resonance equivalents and checks formal electronic assignments at metals. Use the `recomputed` column for the release statistics. Relative to the historical `published` column, 168 verdicts changed from equivalent to inconclusive and three changed from inconclusive to equivalent. Each row gives the reason for the new verdict. [Scoring instructions](data.md#graph-equivalence) · [MolGR](https://github.com/gentle1999/MolGR)

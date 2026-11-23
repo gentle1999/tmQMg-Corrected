@@ -1,6 +1,6 @@
 [project]
 name = "tmqmg-corrected"
-version = "2026.11.20"
+version = "2026.11.23"
 description = "Curated Lewis molecular graphs and supporting evidence for the tmQMg dataset"
 requires-python = ">=3.10,<3.13"
 dependencies = [

@@ -765,7 +765,7 @@ wheels = [
 
 [[package]]
 name = "tmqmg-corrected"
-version = "2026.11.20"
+version = "2026.11.23"
 source = { virtual = "." }
 dependencies = [
     { name = "matplotlib" },
